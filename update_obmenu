@@ -233,6 +233,7 @@ sub parse_desktop_file {
 	my %info;
 	my ($type, $default_comment, $default_name, $terminal, $command);
 	my ($lang1, $lang2, $name, $comment, $category, $path, $icon, $x);
+	my ($dt_entry_section);
 
 	$lang1 = $lang;
 	$lang2 = ($lang =~ /(.*)_/) ? $1 : $lang;
@@ -243,6 +244,12 @@ sub parse_desktop_file {
 
 	$name = $comment = $category = "";
 	foreach (<FH>) {
+		if (!$dt_entry_section) {
+			$dt_entry_section = 1 if ($_ =~ /^\[Desktop Entry\]/);
+			next;
+		}
+		last if ($_ =~ /^\[/); 
+
 		$default_name	 = $1 if (/^_?Name\s*=\s*(.*)/);
 		$name		 = $1 if (/^_?Name\[$lang1\]\s*=\s*(.*)$/ ||
 					 /^_?Name\[$lang2\]\s*=\s*(.*)$/);
@@ -263,6 +270,8 @@ sub parse_desktop_file {
 			}
 		}
 	}
+	chomp($category);
+
 	close(FH);
 	return (0) if ($type ne "Application");
 
