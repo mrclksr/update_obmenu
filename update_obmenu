@@ -312,13 +312,13 @@ sub add_submenu {
 			"Your menu.xml seems to be corrupted.");
 	}
 	splice @ob_menu, $idx + 1, 0,
-	    "<menu id=\"$id\" label=\"$label\">\n";
+	    "<menu id=\"$id\" label=\"$label\" comment=\"--- auto ---\">\n";
 	splice @ob_menu, $idx + 2, 0, "</menu>\n";
 
 	if (($idx = find_menu("root-menu")) == -1)
 		{ Xerr(1, "Fatal: Couldn't find the root menu") }
-	splice @ob_menu, $idx + 1, 0, "\t<menu id=\"$id\" icon=\"$icon\"/>\n";
-
+	splice @ob_menu, $idx + 1, 0, "\t<menu id=\"$id\" icon=\"$icon\" " .
+	    "comment=\"--- auto ---\"/>\n";
 	return (0);
 }
 
@@ -389,7 +389,7 @@ sub add_me {
 ##############################################################################
 my $nflag = 0;
 my $uflag = 0;
-my $skip = 0;
+my ($skip_item, $skip_menu);
 my $path;
 
 ($lang) = split(/\./, $ENV{'LANG'});
@@ -442,13 +442,24 @@ if ($nflag == 1) {
 	push @ob_menu, '</menu>' . "\n";
 	push @ob_menu, '</openbox_menu>' . "\n";
 } else {
-	# Read the obenbox menu and skip previously added application entries.
+	# Read the obenbox menu and skip previously added menus and
+	# application entries.
 	if (!open(FH, '<', $menu_path) and !open(FH, '<', $dflt_menu))
 		{ Xerr(1, "Could not find menu.xml") }
 	foreach (<FH>) {
-		$skip = 1 if (/\s*<item\s*.*\s*comment=\"--- auto ---\">/);
-		push @ob_menu, $_ if ($skip == 0);
-		$skip = 0 if (/\s*<\/item>/);
+		if (/\s*<menu\s*.*\s*comment=\"--- auto ---\">/) {
+			$skip_menu++;
+		} elsif (/\s*<item\s*.*\s*comment=\"--- auto ---\">/) {
+			$skip_item++;
+		} elsif ($skip_menu && /\s*<\/menu>/) {
+			$skip_menu--;
+		} elsif ($skip_item && /\s*<\/item>/) {
+			$skip_item--;
+		} else {
+			next if ($skip_item || $skip_menu);
+			next if (/\s*<menu\s*.*\s*comment=\"--- auto ---\".*\/>/);
+			push @ob_menu, $_;
+		}
 	}
 	close(FH);
 }
