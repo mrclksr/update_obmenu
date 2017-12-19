@@ -176,8 +176,9 @@ sub find_icon_theme_dir
 }
 
 sub find_icon {
-	my ($i, $ih, $path, $dir, @inherit, @tmp);
+	my ($i, $ih, $p, $path, $dir, @inherit, @tmp);
 	my ($icon) = @_;
+	my @exts = ('.png', '.svg', '.xpm');
 
 	if (!$icon_theme && !$fallback_icon_theme && lookup_icon_theme() == 0) {
 		@tmp = @icon_paths;
@@ -185,28 +186,36 @@ sub find_icon {
 		@icon_paths = ();
 
 		if (($dir = find_icon_theme_dir($icon_theme))) {
-				my @inherits = get_inherits($dir);
-				foreach $ih (@inherits) {
-					my $ihdir = find_icon_theme_dir($ih);
-					push @icon_paths, $ihdir if ($ihdir);
-				}
+			my @inherits = get_inherits($dir);
+			foreach $ih (@inherits) {
+				my $ihdir = find_icon_theme_dir($ih);
+				push @icon_paths, $ihdir if ($ihdir);
+			}
 		}
 		if (($dir = find_icon_theme_dir($fallback_icon_theme))) {
-				my @inherits = get_inherits($dir);
-				foreach $ih (@inherits) {
-					my $ihdir = find_icon_theme_dir($ih);
-					push @icon_paths, $ihdir if ($ihdir);
-				}
+			my @inherits = get_inherits($dir);
+			foreach $ih (@inherits) {
+				my $ihdir = find_icon_theme_dir($ih);
+				push @icon_paths, $ihdir if ($ihdir);
+			}
 		}
 	}
 	push @icon_paths, @tmp;
-	$icon .= ".png" if ($icon !~ /.*\.[a-zA-Z]+$/);
-	foreach $dir (@icon_paths) {
-		foreach (`find "$dir" -name "$icon" 2>/dev/null`)
-			{ chomp; return ($_); }
+	if ($icon !~ /.*\.[a-zA-Z]+$/) {
+		for ($i = 0; $i < @exts; $i++) {
+			$p = $icon . $exts[$i];
+			foreach $dir (@icon_paths) {
+				foreach (`find "$dir" -name "$p" 2>/dev/null`)
+					{ chomp; return ($_); }
+			}
+		}
+	} else {
+		foreach $dir (@icon_paths) {
+			foreach (`find "$dir" -name "$icon" 2>/dev/null`)
+				{ chomp; return ($_); }
+		}
 	}
 }
-
 
 sub find_menu {
 	my ($id) = @_;
