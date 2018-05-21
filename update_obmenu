@@ -491,7 +491,7 @@ sub is_blacklisted {
 }
 
 read_blacklist();
-my %apps_hash;
+
 foreach $path (@apps_paths) {
 	foreach (`find $path -name "*.desktop" 2>/dev/null`) {
 		chomp;
@@ -514,8 +514,9 @@ foreach (sort {$b cmp $a} keys %cats_hash) {
 	add_submenu($cats_hash{$_});
 }
 
-my @capps;
 foreach my $c (values %cats_hash) {
+	my @capps;
+
 	for (my $i = 0; $i < @apps; $i++) {
 		next if ($c ne $apps[$i]{'Category'});
 		my $j;
