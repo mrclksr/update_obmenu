@@ -182,14 +182,14 @@ sub find_icon_theme_dir
 sub find_icon {
 	my ($i, $ih, $p, $path, $dir, @inherit, @tmp);
 	my ($icon) = @_;
-	my @exts = ('.png', '.svg', '.xpm');
-
+	my @exts = ('.svg', '.png', '.xpm');
 	if (!$icon_theme && !$fallback_icon_theme && lookup_icon_theme() == 0) {
 		@tmp = @icon_paths;
 
 		@icon_paths = ();
 
 		if (($dir = find_icon_theme_dir($icon_theme))) {
+			push @icon_paths, $dir;
 			my @inherits = get_inherits($dir);
 			foreach $ih (@inherits) {
 				my $ihdir = find_icon_theme_dir($ih);
@@ -209,7 +209,7 @@ sub find_icon {
 		for ($i = 0; $i < @exts; $i++) {
 			$p = $icon . $exts[$i];
 			foreach $dir (@icon_paths) {
-				foreach (`find "$dir" -name "$p" 2>/dev/null`)
+				foreach (`find -L "$dir" -name "$p" 2>/dev/null`)
 					{ chomp; return ($_); }
 			}
 		}
