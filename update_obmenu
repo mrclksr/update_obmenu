@@ -1,4 +1,5 @@
 #!/usr/bin/env perl
+# vim: set tabstop=4:
 #
 # Copyright (c) 2012 Marcel Kaiser. All rights reserved.
 #
@@ -27,15 +28,17 @@
 # FILENAME:	update_obmenu
 # AUTHOR:	Marcel Kaiser <mk@nic-nac-project.org>
 # PURPOSE:	Creates and updates the Openbox menu.
-# REQUIRES:     Optional: gmessage or xmessage for error messages.
+# REQUIRES:	Optional: gmessage or xmessage for error messages.
 #
 ##############################################################################
 use utf8;
 use strict;
+use Fcntl qw(:flock);
+use IO::KQueue;
 
 my %category_icons = (
 	AudioVideo  => "applications-multimedia",
-	Audio	    => "applications-multimedia",
+	udio	    => "applications-multimedia",
 	Video	    => "applications-multimedia",
 	Development => "applications-development",
 	Education   => "applications-science",
@@ -52,14 +55,14 @@ my %category_icons = (
 my @categories = (
 	"AudioVideo",	"Audio",	"Video",	"Development",
 	"Education",	"Game",		"Graphics",	"Network",
-	"Office",	"Settings",	"System",	"Utility"
+	"Office",		"Settings",	"System",	"Utility"
 );
 
 # Add your language here.
 my %ctgrs_de = (
-	AudioVideo => "Audio/Video", Audio	 => "Audio",
+	AudioVideo => "Audio/Video", Audio		 => "Audio",
 	Video	   => "Video",	     Development => "Entwicklung",
-	Education  => "Bildung",     Game	 => "Spiele",
+	Education  => "Bildung",     Game		 => "Spiele",
 	Graphics   => "Grafik",	     Network	 => "Netzwerk/Internet",
 	Office	   => "Büro",	     Settings	 => "Einstellungen",
 	System	   => "System",	     Utility	 => "Zubehör",
@@ -68,12 +71,15 @@ my %ctgrs_de = (
 my %ctgrs = (de => \%ctgrs_de);
 
 my @xterms= ("sakura", "urxvt", "rxvt", "mrxvt", "xterm", "Terminal",
-	     "gnome-terminal");
+			 "gnome-terminal");
 
 # Where to look for desktop files.
 my @apps_paths = (
 	"/usr/local/share/applications", "/usr/share/applications",
-	$ENV{'XDG_DATA_HOME'} ? $ENV{'XDG_DATA_HOME'} : "$ENV{'HOME'}/.local"
+	$ENV{'XDG_DATA_HOME'} ? $ENV{'XDG_DATA_HOME'} :
+		"$ENV{'HOME'}/.local/share/applications",
+	$ENV{'XDG_DATA_HOME'} ? $ENV{'XDG_DATA_HOME'} :
+		"$ENV{'HOME'}/.local/applications"
 );
 
 # Paths to look for icon dirs.
@@ -285,12 +291,12 @@ sub parse_desktop_file {
 		}
 		last if ($_ =~ /^\[/); 
 
-		$default_name	 = $1 if (/^_?Name\s*=\s*(.*)/);
+		$default_name= $1 if (/^_?Name\s*=\s*(.*)/);
 		$name		 = $1 if (/^_?Name\[$lang1\]\s*=\s*(.*)$/ ||
-					 /^_?Name\[$lang2\]\s*=\s*(.*)$/);
+							/^_?Name\[$lang2\]\s*=\s*(.*)$/);
 		$default_comment = $1 if (/^_?Comment\s*=\s*(.*)/);
 		$comment	 = $1 if (/^_?Comment\[$lang1\]\s*=\s*(.*)/ ||
-					 /^_?Comment\[$lang2\]\s*=\s*(.*)/);
+							/^_?Comment\[$lang2\]\s*=\s*(.*)/);
 		$command	 = $1 if (/^Exec\s*=\s*(.*)$/);
 		$type		 = $1 if (/^Type\s*=\s*(.*)/);
 		$terminal	 = $1 if (/^Terminal\s*=\s*(.*)/);
@@ -411,84 +417,6 @@ sub add_me {
 	splice @ob_menu, $idx + 4, 0, "\t<\/item>\n";
 }
 
-##############################################################################
-my $nflag = 0;
-my $uflag = 0;
-my ($skip_item, $skip_menu);
-my $path;
-
-($lang) = split(/\./, $ENV{'LANG'});
-
-# Look for the default openbox menu
-foreach (@menu_prefix) {
-	my $path = "${_}/${dflt_menu}";
-
-	if (-e $path) {
-		$dflt_menu = $path;
-		last;
-	}
-}
-
-while ($ARGV[0] =~ m/^-/) {
-	if ($ARGV[0] eq "-u") {
-		$uflag = 1;
-	} elsif ($ARGV[0] eq "-n") {
-		$nflag = 1;
-	}
-	shift;
-}
-if (($uflag == 1 && $nflag == 1) || ($uflag == 0 && $nflag == 0)) {
-	my $progname = $0;
-
-	$progname = $1 if ($0 =~ /\.{0,2}.*\/([a-zA-Z0-9.,-_]+$)/);
-	print STDERR "Usage: $progname -u|-n\n" .
-		     "-u   : Update your Openbox menu.\n" .
-		     "-n   : Create a new Openbox menu. Your old menu.xml " .
-	    "will be overwritten!\n";
-	exit(1);
-}
-
-if ($nflag == 1) {
-	# Create a new menu.
-	@ob_menu = ();
-	push @ob_menu, '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-	push @ob_menu, '<openbox_menu xmlns="http://openbox.org/3.4/menu">' . "\n";
-	push @ob_menu, '<menu id="root-menu" label="Openbox 3">' . "\n";
-	push @ob_menu, '<separator />' . "\n";
-	push @ob_menu, '<menu id="client-list-menu" />' . "\n";
-	push @ob_menu, '<separator />' . "\n";
-	push @ob_menu, '<item label="Reconfigure">' . "\n";
-	push @ob_menu, '<action name="Reconfigure" />' . "\n";
-	push @ob_menu, '</item>' . "\n";
-	push @ob_menu, '<separator />' . "\n";
-	push @ob_menu, '<item label="Exit">' . "\n";
-	push @ob_menu, '<action name="Exit" />' . "\n";
-	push @ob_menu, '</item>' . "\n";
-	push @ob_menu, '</menu>' . "\n";
-	push @ob_menu, '</openbox_menu>' . "\n";
-} else {
-	# Read the obenbox menu and skip previously added menus and
-	# application entries.
-	if (!open(FH, '<', $menu_path) and !open(FH, '<', $dflt_menu))
-		{ Xerr(1, "Could not find menu.xml") }
-	foreach (<FH>) {
-		if (/\s*<menu\s*.*\s*comment=\"--- auto ---\">/) {
-			$skip_menu++;
-		} elsif (/\s*<item\s*.*\s*comment=\"--- auto ---\">/) {
-			$skip_item++;
-		} elsif ($skip_menu && /\s*<\/menu>/) {
-			$skip_menu--;
-		} elsif ($skip_item && /\s*<\/item>/) {
-			$skip_item--;
-		} else {
-			next if ($skip_item || $skip_menu);
-			next if (/\s*<menu\s*.*\s*comment=\"--- auto ---\".*\/>/);
-			push @ob_menu, $_;
-		}
-	}
-	close(FH);
-}
-
 sub read_blacklist {
 	my $path_blacklist = "$ENV{HOME}/.config/update_obmenu.ignore";
 
@@ -511,67 +439,212 @@ sub is_blacklisted {
 	return 0;
 }
 
+sub read_obmenu {
+	my ($skip_item, $skip_menu);
+	@ob_menu = ();
+	foreach (@ob_menu) {
+		print $_;
+	}
+	# Read the obenbox menu and skip previously added menus and
+	# application entries.
+	if (!open(FH, '<', $menu_path) and !open(FH, '<', $dflt_menu))
+		{ Xerr(1, "Could not find menu.xml") }
+	flock(FH, LOCK_EX)
+		or Xerr(1, "Could not lock $menu_path");
+	foreach (<FH>) {
+		if (/\s*<menu\s*.*\s*comment=\"--- auto ---\">/) {
+			$skip_menu++;
+		} elsif (/\s*<item\s*.*\s*comment=\"--- auto ---\">/) {
+			$skip_item++;
+		} elsif ($skip_menu && /\s*<\/menu>/) {
+			$skip_menu--;
+		} elsif ($skip_item && /\s*<\/item>/) {
+			$skip_item--;
+		} else {
+			next if ($skip_item || $skip_menu);
+			next if (/\s*<menu\s*.*\s*comment=\"--- auto ---\".*\/>/);
+			push @ob_menu, $_;
+		}
+	}
+	flock(FH, LOCK_UN);
+	close(FH);
+}
+
+sub write_obmenu {
+	# Write the menu to menu.xml
+	chmod(0644, $menu_path);
+	open(FH, '>', $menu_path)
+		or Xerr(1, "Could not open \'$menu_path\'");
+	flock(FH, LOCK_EX)
+		or Xerr(1, "Could not lock $menu_path");
+	foreach(@ob_menu)
+		{ print FH }
+	flock(FH, LOCK_UN);
+	close(FH);
+	system("openbox --reconfigure");
+}
+
+sub usage {
+	my $progname = $0;
+
+	$progname = $1 if ($0 =~ /\.{0,2}.*\/([a-zA-Z0-9.,-_]+$)/);
+	print STDERR "Usage: $progname -u|-n\n" .
+			 "-a   : Monitor application directories and autoupdate menu.\n" .
+			 "-u   : Update your Openbox menu.\n" .
+		     "-n   : Create a new Openbox menu. Your old menu.xml " .
+	    "will be overwritten!\n";
+	exit(1);
+}
+
+##############################################################################
+my $nflag = 0;
+my $uflag = 0;
+my $autoupdate = 0;
+my $path;
+my $kq;
+my @fhs;
+
+($lang) = split(/\./, $ENV{'LANG'});
+
+# Look for the default openbox menu
+foreach (@menu_prefix) {
+	my $path = "${_}/${dflt_menu}";
+
+	if (-e $path) {
+		$dflt_menu = $path;
+		last;
+	}
+}
+
+while ($ARGV[0] =~ m/^-/) {
+	if ($ARGV[0] eq "-u") {
+		$uflag = 1;
+	} elsif ($ARGV[0] eq "-n") {
+		$nflag = 1;
+	} elsif ($ARGV[0] eq "-a") {
+		$autoupdate = 1;
+	}
+	shift;
+}
+
+if ($autoupdate == 0) {
+	if (($uflag == 1 && $nflag == 1) || ($uflag == 0 && $nflag == 0)) {
+		usage();
+	}
+} elsif ($autoupdate + $nflag + $uflag > 1) {
+		usage();
+}
+
+if ($nflag == 1) {
+	# Create a new menu.
+	@ob_menu = ();
+	push @ob_menu, '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+	push @ob_menu, '<openbox_menu xmlns="http://openbox.org/3.4/menu">' . "\n";
+	push @ob_menu, '<menu id="root-menu" label="Openbox 3">' . "\n";
+	push @ob_menu, '<separator />' . "\n";
+	push @ob_menu, '<menu id="client-list-menu" />' . "\n";
+	push @ob_menu, '<separator />' . "\n";
+	push @ob_menu, '<item label="Reconfigure">' . "\n";
+	push @ob_menu, '<action name="Reconfigure" />' . "\n";
+	push @ob_menu, '</item>' . "\n";
+	push @ob_menu, '<separator />' . "\n";
+	push @ob_menu, '<item label="Exit">' . "\n";
+	push @ob_menu, '<action name="Exit" />' . "\n";
+	push @ob_menu, '</item>' . "\n";
+	push @ob_menu, '</menu>' . "\n";
+	push @ob_menu, '</openbox_menu>' . "\n";
+} elsif (!$autoupdate) {
+	read_obmenu();
+}
+
+for (my $i = 0; $i < @apps_paths;) {
+	if (! -d $apps_paths[$i]) {
+		splice @apps_paths, $i, 1;
+	} else {
+		$i++;
+	}
+}
+
+if ($autoupdate) {
+	$kq = IO::KQueue->new();
+	foreach (@apps_paths) {
+		if (open(my $fh, $_)) {
+			push @fhs, $fh;
+			my $fd = fileno($fh);
+			$kq->EV_SET($fd, EVFILT_VNODE, EV_ADD|EV_ONESHOT,
+				NOTE_WRITE, 0, 0);
+		}
+	}
+}
+
 read_blacklist();
 get_icon_search_paths();
 
-foreach $path (@apps_paths) {
-	foreach (`find $path -name "*.desktop" 2>/dev/null`) {
-		chomp;
-		next if (/userapp-/);
-		next if (is_blacklisted($_));
-		my %i;
-		if ((%i = parse_desktop_file($_))) {
-			next if (find_application($i{'Name'}));
-			next if ($i{'NoDisplay'} eq 'true');
-			if ($i{'Category'} && find_menu($i{'Category'}) == -1) {
-				my $key = translate($i{'Category'});
-				$cats_hash{$key} = $i{'Category'};
-				push @apps, { %i };
+while (1) {
+	if ($autoupdate) {
+		my @events = $kq->kevent();
+		next if (!@events);
+		foreach my $kevent (@events) {
+			my $fd = $kevent->[KQ_IDENT];
+			sleep(1);
+			$kq->EV_SET($fd, EVFILT_VNODE, EV_ADD|EV_ONESHOT, NOTE_WRITE, 0, 0);
+		}
+		read_obmenu();
+	}
+	@apps = ();
+	%cats_hash = ();
+	foreach $path (@apps_paths) {
+		foreach (`find $path -name "*.desktop" 2>/dev/null`) {
+			chomp;
+			next if (/userapp-/);
+			next if (is_blacklisted($_));
+			my %i;
+			if ((%i = parse_desktop_file($_))) {
+				next if (find_application($i{'Name'}));
+				next if ($i{'NoDisplay'} eq 'true');
+				if ($i{'Category'} && find_menu($i{'Category'}) == -1) {
+					my $key = translate($i{'Category'});
+					$cats_hash{$key} = $i{'Category'};
+					push @apps, { %i };
+				}
 			}
 		}
 	}
-}
+	foreach (sort {$b cmp $a} keys %cats_hash) {
+		next if (find_menu($cats_hash{$_}) != -1);
+		add_submenu($cats_hash{$_});
+	}
+	foreach my $c (values %cats_hash) {
+		my @capps;
 
-foreach (sort {$b cmp $a} keys %cats_hash) {
-	next if (find_menu($cats_hash{$_}) != -1);
-	add_submenu($cats_hash{$_});
-}
-
-foreach my $c (values %cats_hash) {
-	my @capps;
-
-	for (my $i = 0; $i < @apps; $i++) {
-		next if ($c ne $apps[$i]{'Category'});
-		my $j;
-		for ($j = 0; $j < @capps; $j++) {
-			if (lc($apps[$i]{'Name'}) le lc($capps[$j]{'Name'})) {
-				splice @capps, $j, 0, $apps[$i];
-				last;
+		for (my $i = 0; $i < @apps; $i++) {
+			next if ($c ne $apps[$i]{'Category'});
+			my $j;
+			for ($j = 0; $j < @capps; $j++) {
+				if (lc($apps[$i]{'Name'}) le lc($capps[$j]{'Name'})) {
+					splice @capps, $j, 0, $apps[$i];
+					last;
+				}
+			}
+			if ($j == @capps) {
+				push @capps, $apps[$i];
 			}
 		}
-		if ($j == @capps) {
-			push @capps, $apps[$i];
+		for (my $i = @capps - 1; $i >= 0; $i--) {
+			next if (find_application($capps[$i]{'Name'}));
+			my $hp = $capps[$i];
+			my %h = %$hp;
+			add_application(%h);
 		}
+		@capps = ();
 	}
-	for (my $i = @capps - 1; $i >= 0; $i--) {
-		next if (find_application($capps[$i]{'Name'}));
-		my $hp = $capps[$i];
-		my %h = %$hp;
-		add_application(%h);
-	}
-	@capps = ();
+	last if (!$autoupdate);
+	add_me();
+	write_obmenu();
 }
 
 # Add an entry for this script to the Openbox root menu.
 add_me();
-
-# Write the menu to menu.xml
-chmod(0644, $menu_path);
-open(FH, '>', $menu_path)
-	or Xerr(1, "Could not open \'$menu_path\'");
-foreach(@ob_menu)
-	{ print FH }
-close(FH);
-system("openbox --reconfigure");
+write_obmenu();
 exit(0);
 
