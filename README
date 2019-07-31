@@ -10,14 +10,19 @@ INSTALLATION
 % cp update_obmenu ~/bin
 % chmod u+x ~/bin/update_obmenu
 
+DEPENDENCIES
+
+devel/p5-IO-KQueue
+
 RECOMMENDATION
 
-Save your ~/.config/openbox/menu.xml, and execute ``update_obmenu -n´´ to
+Save your ~/.config/openbox/menu.xml, and execute `update_obmenu -n´ to
 create a new menu.xml. Finally, add your modifications to this file.
 
 USAGE
 
 Usage: update_obmenu -u|-n
+-a   : Monitor application directories and autoupdate menu.
 -u   : Update your Openbox menu.
 -n   : Create a new Openbox menu. Your old menu.xml will be overwritten!
 
