@@ -24,12 +24,8 @@
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 ##############################################################################
-#
-# FILENAME:	update_obmenu
-# AUTHOR:	Marcel Kaiser <mk@nic-nac-project.org>
 # PURPOSE:	Creates and updates the Openbox menu.
-# REQUIRES:	Optional: gmessage or xmessage for error messages.
-#
+# REQUIRES:	Optional: notify-send, gmessage or xmessage for error messages.
 ##############################################################################
 use utf8;
 use strict;
@@ -430,7 +426,7 @@ sub add_submenu {
 		$idx++;
 	}
 	if ($idx == @ob_menu) {
-		Xerr(1, "Fatal: Coudn't find 'openbox_menu'\n".
+		Xerr(1, "Fatal: Coudn't find 'openbox_menu'\n" .
 			"Your menu.xml seems to be corrupted.");
 	}
 	splice @ob_menu, $idx + 1, 0,
@@ -466,15 +462,15 @@ sub add_application {
 				if ($icon !~ /.*\.[a-zA-Z]+$/);
 			splice @ob_menu, $i + 1, 0,
 				   "\t<item icon=\"$icon\"" .
-				   " label=\"$app{'Name'}\" ".
+				   " label=\"$app{'Name'}\" " .
 				   "comment=\"--- auto ---\">\n";
 		} else {
 			splice @ob_menu, $i + 1, 0,
-				   "\t<item label=\"$app{'Name'}\" ".
+				   "\t<item label=\"$app{'Name'}\" " .
 				   "comment=\"--- auto ---\">\n";
 		}
 	} else {
-		splice @ob_menu, $i + 1, 0, "\t<item label=\"$app{'Name'}\" ".
+		splice @ob_menu, $i + 1, 0, "\t<item label=\"$app{'Name'}\" " .
 			   "comment=\"--- auto ---\">\n";
 	}
 	splice @ob_menu, $i + 2, 0, "\t\t<action name=\"Execute\">\n";
@@ -548,6 +544,8 @@ sub read_obmenu {
 	}
 	@lines = split(/\n/, $buf);
 	foreach (@lines) {
+		chomp;
+		next if (!$_ || /^\s*$/);
 		if (/\s*<menu\s*.*\s*comment=\"--- auto ---\">/) {
 			$skip_menu++;
 		} elsif (/\s*<item\s*.*\s*comment=\"--- auto ---\">/) {
@@ -575,8 +573,10 @@ sub write_obmenu {
 		or Xerr(1, "Could not open \'$menu_path\'");
 	flock($fh, LOCK_EX)
 		or Xerr(1, "Could not lock $menu_path");
-	foreach(@ob_menu)
-		{ print $fh "$_\n" }
+	foreach(@ob_menu) {
+		chomp;
+		print $fh "$_\n"
+	}
 	flock($fh, LOCK_UN);
 	close($fh);
 	system("openbox --reconfigure");
@@ -726,6 +726,7 @@ if ($nflag == 1) {
 	read_obmenu();
 }
 
+# Remove non-existing paths
 for (my $i = 0; $i < @apps_paths;) {
 	if (! -d $apps_paths[$i]) {
 		splice @apps_paths, $i, 1;
@@ -849,4 +850,3 @@ while (1) {
 add_me();
 write_obmenu();
 exit(0);
-
