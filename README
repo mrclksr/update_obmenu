@@ -16,13 +16,18 @@ devel/p5-IO-KQueue
 
 RECOMMENDATION
 
-Save your ~/.config/openbox/menu.xml, and execute `update_obmenu -n´ to
-create a new menu.xml. Finally, add your modifications to this file.
+Backup ~/.config/openbox/menu.xml, and execute `update_obmenu -n´ to
+create a new menu.xml. Finally, add your modifications to this file, and
+run `update_obmenu -u`.
+For monitoring application directories on FreeBSD's unionfs use -p, as kqueue
+isn't working reliable there. That is, after a a few modifications on one of
+the directories, no further events are returned by kevent().
 
 USAGE
 
-Usage: update_obmenu -u|-n
+Usage: update_obmenu -u|-n|-a [-p delay]
 -a   : Monitor application directories and autoupdate menu.
+-p   : Instead of kqueue use stat to poll for changes every 'delay' seconds.
 -u   : Update your Openbox menu.
 -n   : Create a new Openbox menu. Your old menu.xml will be overwritten!
 
