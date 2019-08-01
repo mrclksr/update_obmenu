@@ -101,6 +101,7 @@ my @pixmap_search_paths = (
 );
 
 my $lang        = "en";
+my $lockfile	= "$ENV{'HOME'}/.update_obmenu.lock";
 my $menu_path   = "$ENV{'HOME'}/.config/openbox/menu.xml";
 my @menu_prefix = ("/etc", "/usr/etc", "/usr/local/etc");
 my $dflt_menu   = "xdg/openbox/menu.xml";
@@ -440,11 +441,8 @@ sub is_blacklisted {
 }
 
 sub read_obmenu {
-	my ($skip_item, $skip_menu);
+	my ($skip_item, $skip_menu, $buf, @lines);
 	@ob_menu = ();
-	foreach (@ob_menu) {
-		print $_;
-	}
 	# Read the obenbox menu and skip previously added menus and
 	# application entries.
 	if (!open(FH, '<', $menu_path) and !open(FH, '<', $dflt_menu))
@@ -452,6 +450,11 @@ sub read_obmenu {
 	flock(FH, LOCK_EX)
 		or Xerr(1, "Could not lock $menu_path");
 	foreach (<FH>) {
+		$_ =~ s/>\s*</>\n</g;
+		$buf .= $_;
+	}
+	@lines = split(/\n/, $buf);
+	foreach (@lines) {
 		if (/\s*<menu\s*.*\s*comment=\"--- auto ---\">/) {
 			$skip_menu++;
 		} elsif (/\s*<item\s*.*\s*comment=\"--- auto ---\">/) {
@@ -502,6 +505,7 @@ my $uflag = 0;
 my $autoupdate = 0;
 my $path;
 my $kq;
+my $lock;
 my @fhs;
 
 ($lang) = split(/\./, $ENV{'LANG'});
@@ -566,6 +570,12 @@ for (my $i = 0; $i < @apps_paths;) {
 }
 
 if ($autoupdate) {
+	open($lock, '>>', $lockfile)
+		or Xerr(1, "Failed to open lockfile");
+	unless (flock($lock, LOCK_EX|LOCK_NB)) {
+		print STDERR "Another instance of '$0 -a' is already running\n";
+		exit(1);
+	}
 	$kq = IO::KQueue->new();
 	foreach (@apps_paths) {
 		if (open(my $fh, $_)) {
