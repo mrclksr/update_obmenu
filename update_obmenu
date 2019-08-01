@@ -178,6 +178,14 @@ my @pixmap_search_paths = (
 	"$ENV{'HOME'}/.local/share/pixmaps",
 );
 
+my @toolkit_config_paths = (
+	"$ENV{'HOME'}/.config/gtk-3.0/settings.ini",
+	"$ENV{'HOME'}/.gtkrc-2.0",
+	"$ENV{'HOME'}/.gtkrc-2.0.mine",
+	"$ENV{'HOME'}/.gtkrc.mine",
+	"$ENV{'HOME'}/.config/qt5ct/qt5ct.conf"
+);
+
 my $lang        = "en";
 my $lockfile	= "$ENV{'HOME'}/.update_obmenu.lock";
 my $menu_path   = "$ENV{'HOME'}/.config/openbox/menu.xml";
@@ -226,16 +234,22 @@ sub lookup_icon_theme {
 	my $fh;
 	local $_;
 
-	open($fh, '<', "$ENV{'HOME'}/.gtkrc.mine") or return (-1);
-	foreach (<$fh>) {
-		if (/^gtk-icon-theme-name\s*=\s*\"(.+)\"/) {
-			$icon_theme = $1;
-		} elsif (/^gtk-fallback-icon-theme\s*=\s*\"(.+)\"/) {
-			$fallback_icon_theme = $1;
+	$icon_theme = "";
+	foreach my $path (@toolkit_config_paths) {
+		open($fh, '<', $path) or next;
+		foreach (<$fh>) {
+			if (/^gtk-icon-theme-name\s*=\s*\"(.+)\"/) {
+				$icon_theme = $1;
+			} elsif (/^gtk-fallback-icon-theme\s*=\s*\"(.+)\"/) {
+				$fallback_icon_theme = $1;
+			} elsif (/^icon_theme\s*=\s*(.+)/) {
+				$icon_theme = $1;
+			}
 		}
+		close($fh);
+		return (0) if ($icon_theme);
 	}
-	close($fh);
-	return (0);
+	return (-1);
 }
 
 sub get_inherits {
