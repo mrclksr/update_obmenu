@@ -125,7 +125,7 @@ sub Xerr {
 sub translate {
 	my ($str) = @_;
 	my ($l, $p, $tstr);
-	
+
 	return ($str) if (!$lang || $lang eq 'en');
 	($l) = split(/_/, $lang, 2);
 	return ($str) if (!($p = $ctgrs{$l}));
@@ -147,23 +147,26 @@ sub find_xterm {
 }
 
 sub lookup_icon_theme {
-	open(FH, '<', "$ENV{'HOME'}/.gtkrc.mine") or return (-1);
-	foreach (<FH>) {
+	my $fh;
+	local $_;
+
+	open($fh, '<', "$ENV{'HOME'}/.gtkrc.mine") or return (-1);
+	foreach (<$fh>) {
 		if (/^gtk-icon-theme-name\s*=\s*\"(.+)\"/) {
 			$icon_theme = $1;
 		} elsif (/^gtk-fallback-icon-theme\s*=\s*\"(.+)\"/) {
 			$fallback_icon_theme = $1;
 		}
 	}
-	close(FH);
+	close($fh);
 	return (0);
 }
 
-sub get_inherits
-{
+sub get_inherits {
 	my ($fh);
 	my ($index) = "$_[0]/index.theme";
-		
+	local $_;
+
 	return if (! -f $index);
 	open($fh, '<', $index) || return;
 	foreach (<$fh>) {
@@ -175,9 +178,9 @@ sub get_inherits
 	close($fh);
 }
 
-sub find_icon_theme_dir
-{
+sub find_icon_theme_dir {
 	my ($theme) = @_;
+	local $_;
 
 	foreach (@icon_prefix) {
 		my $dir = "$_/$theme";
@@ -189,6 +192,7 @@ sub find_icon_theme_dir
 sub get_icon_search_paths {
 	my ($dir, $idir, $fh);
 	my (@list, @icon_paths);
+	local $_;
 
 	if (!$icon_theme) {
 		lookup_icon_theme();
@@ -230,6 +234,7 @@ sub find_icon {
 	my ($i, $ih, $p, $path, $dir, @inherit, @tmp);
 	my ($icon) = @_;
 	my @exts = ('.svg', '.png', '.xpm');
+	local $_;
 
 	if ($icon !~ /.*\.[a-zA-Z]+$/) {
 		for ($i = 0; $i < @exts; $i++) {
@@ -253,6 +258,7 @@ sub find_icon {
 sub find_menu {
 	my ($id) = @_;
 	my $idx  = 0;
+	local $_;
 
 	foreach (@ob_menu) {
 		return ($idx) if (/^\s*\<menu id=\"$id\"/);
@@ -263,6 +269,7 @@ sub find_menu {
 
 sub find_application {
 	my ($app) = @_;
+	local $_;
 
 	foreach (@ob_menu) {
 		return (1) if (/^\s*\<item label=\"$app\"/);
@@ -273,19 +280,20 @@ sub find_application {
 sub parse_desktop_file {
 	my ($fname) = @_;
 	my %info;
-	my ($type, $default_comment, $default_name, $terminal, $command);
+	my ($fh, $type, $default_comment, $default_name, $terminal, $command);
 	my ($lang1, $lang2, $name, $comment, $category, $path, $icon, $x);
 	my ($no_display, $dt_entry_section);
+	local $_;
 
 	$lang1 = $lang;
 	$lang2 = ($lang =~ /(.*)_/) ? $1 : $lang;
 
 	$info{'Filename'} = $fname;
 
-	open(FH, '<', $fname) or return (0);
+	open($fh, '<', $fname) or return (0);
 
 	$name = $comment = $category = "";
-	foreach (<FH>) {
+	foreach (<$fh>) {
 		if (!$dt_entry_section) {
 			$dt_entry_section = 1 if ($_ =~ /^\[Desktop Entry\]/);
 			next;
@@ -314,7 +322,7 @@ sub parse_desktop_file {
 	}
 	chomp($category);
 
-	close(FH);
+	close($fh);
 	return (0) if ($type ne "Application");
 
 	$command =~ s/\%[a-z,A-Z]//;
@@ -335,6 +343,8 @@ sub add_submenu {
 	my $idx   = 0;
 	my $label = translate($id);
 	my $icon = find_icon($category_icons{$id});
+	local $_;
+
 	foreach (@ob_menu) {
 		last if (/^\<openbox_menu/);
 		$idx++;
@@ -359,6 +369,7 @@ sub add_application {
 	my $i     = 0;
 	my $xterm;
 	my $icon;
+	local $_;
 
 	return (-1) if (($i = find_menu($app{'Category'})) == -1);
 	
@@ -399,6 +410,7 @@ sub add_application {
 sub add_me {
 	my $idx = 0;
 	my $found_root_menu = 0;
+	local $_;
 
 	foreach (@ob_menu) {
 		if (/^\<menu id=\"root-menu\"/) {
@@ -432,6 +444,7 @@ sub read_blacklist {
 
 sub is_blacklisted {
 	my ($f) = @_;
+	local $_;
 
 	foreach (@blacklist) {
 		chomp;
@@ -441,15 +454,17 @@ sub is_blacklisted {
 }
 
 sub read_obmenu {
-	my ($skip_item, $skip_menu, $buf, @lines);
+	my ($fh, $skip_item, $skip_menu, $buf, @lines);
+	local $_;
+
 	@ob_menu = ();
 	# Read the obenbox menu and skip previously added menus and
 	# application entries.
-	if (!open(FH, '<', $menu_path) and !open(FH, '<', $dflt_menu))
+	if (!open($fh, '<', $menu_path) and !open($fh, '<', $dflt_menu))
 		{ Xerr(1, "Could not find menu.xml") }
-	flock(FH, LOCK_EX)
+	flock($fh, LOCK_EX)
 		or Xerr(1, "Could not lock $menu_path");
-	foreach (<FH>) {
+	foreach (<$fh>) {
 		$_ =~ s/>\s*</>\n</g;
 		$buf .= $_;
 	}
@@ -469,21 +484,23 @@ sub read_obmenu {
 			push @ob_menu, $_;
 		}
 	}
-	flock(FH, LOCK_UN);
-	close(FH);
+	flock($fh, LOCK_UN);
+	close($fh);
 }
 
 sub write_obmenu {
-	# Write the menu to menu.xml
+	my $fh;
+	local $_;
+
 	chmod(0644, $menu_path);
-	open(FH, '>', $menu_path)
+	open($fh, '>', $menu_path)
 		or Xerr(1, "Could not open \'$menu_path\'");
-	flock(FH, LOCK_EX)
+	flock($fh, LOCK_EX)
 		or Xerr(1, "Could not lock $menu_path");
 	foreach(@ob_menu)
-		{ print FH }
-	flock(FH, LOCK_UN);
-	close(FH);
+		{ print $fh "$_\n" }
+	flock($fh, LOCK_UN);
+	close($fh);
 	system("openbox --reconfigure");
 }
 
@@ -497,6 +514,8 @@ sub write_obmenu {
 #
 sub getargs {
 	my ($nargs, $i);
+	local $_;
+
 	if ($ARGV[0] =~ /^-([A-Za-z0-9])([A-Za-z0-9]+)/) {
 		# -Xarg or -XYZ == -X -Y -Z
 		$nargs = @ARGV;
@@ -641,6 +660,11 @@ if ($aflag) {
 		print STDERR "Another instance of '$0 -a' is already running\n";
 		exit(1);
 	}
+	seek $lock, 0, 0;
+	print $lock "$$\n";
+	$lock->flush();
+	truncate $lock, tell($lock);
+
 	if ($pflag) {
 		for (my $i = 0; $i < @apps_paths; $i++) {
 			my @r = stat($apps_paths[$i]);
