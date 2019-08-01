@@ -487,12 +487,80 @@ sub write_obmenu {
 	system("openbox --reconfigure");
 }
 
+#
+# Take an array of flag character and the expected number of arguments.
+# If $ARGV[0] containes a flag not in the given array, or @ARGV doesn't
+# have the required number of arguments, exit with an error.
+# If $ARGV[0] contains a valid flag and @ARGV has the expected number of
+# arguments, return the flag character. If $ARGV[0] doesn't start with
+# a '-', return an empty string.
+#
+sub getargs {
+	my ($nargs, $i);
+	if ($ARGV[0] =~ /^-([A-Za-z0-9])([A-Za-z0-9]+)/) {
+		# -Xarg or -XYZ == -X -Y -Z
+		$nargs = @ARGV;
+		for ($i = 0; $i < @_ - 1; $i++) {
+			next if ($_[$i] ne $1);
+			if ($_[$i + 1] == 0) {
+				my $opt = $1;
+				$ARGV[0] =~ s/^-$opt(.*)/-$1/;
+				return (($opt));
+			}
+			last;
+		}
+		if ($i == @_ - 1) {
+			print STDERR "Invalid option '-$1'\n";
+			exit 1;
+		}
+		for (my $j = 0; $j + 1 < $nargs && $j < $_[$i + 1]; $j++) {
+			if ($ARGV[$j + 1] =~ /^-/) {
+				print STDERR "Option -$_[$i] requires $_[$i + 1] argument(s)\n";
+				exit 1
+			}
+		}
+		my @args = ($2);
+		push @args, splice(@ARGV, 1, $_[$i + 1] - 1);
+		if (@args < $_[$i + 1]) {
+			print STDERR "Option -$_[$i] requires $_[$i + 1] argument(s)\n";
+			exit 1
+		}
+		shift @ARGV;
+		return (($1, @args));
+	} elsif ($ARGV[0] =~ /^-([A-Za-z0-9]{1})/) {
+		# -X
+		$nargs = @ARGV - 1;
+	} else {
+		return ();
+	}
+	for ($i = 0; $i < @_ - 1; $i++) {
+		next if ($_[$i] ne $1);
+		if ($nargs < $_[$i + 1]) {
+			print STDERR "Option -$_[$i] requires $_[$i + 1] arguments\n";
+			exit 1;
+		}
+		for (my $j = 0; $j + 1 < $nargs && $j < $_[$i + 1]; $j++) {
+			if ($ARGV[$j + 1] =~ /^-/) {
+				print STDERR "Option -$_[$i] requires $_[$i + 1] arguments\n";
+				exit 1
+			}
+		}
+		my @args = splice(@ARGV, 1, $_[$i + 1]);
+		shift @ARGV;
+		return (($1, @args));
+	}
+	print STDERR "Invalid option '$ARGV[0]'\n";
+	exit 1;
+}
+
 sub usage {
 	my $progname = $0;
 
 	$progname = $1 if ($0 =~ /\.{0,2}.*\/([a-zA-Z0-9.,-_]+$)/);
-	print STDERR "Usage: $progname -u|-n\n" .
+	print STDERR "Usage: $progname -u|-n|-a [-p delay]\n" .
 			 "-a   : Monitor application directories and autoupdate menu.\n" .
+			 "-p   : Instead of kqueue use stat to poll for changes every " .
+			 "'delay' seconds.\n" .
 			 "-u   : Update your Openbox menu.\n" .
 		     "-n   : Create a new Openbox menu. Your old menu.xml " .
 	    "will be overwritten!\n";
@@ -500,13 +568,9 @@ sub usage {
 }
 
 ##############################################################################
-my $nflag = 0;
-my $uflag = 0;
-my $autoupdate = 0;
-my $path;
-my $kq;
-my $lock;
-my @fhs;
+my ($aflag, $nflag, $uflag, $pflag, $delay, $update);
+my ($path, $kq, $lock);
+my (@fhs, @mtimes);
 
 ($lang) = split(/\./, $ENV{'LANG'});
 
@@ -520,23 +584,24 @@ foreach (@menu_prefix) {
 	}
 }
 
-while ($ARGV[0] =~ m/^-/) {
-	if ($ARGV[0] eq "-u") {
-		$uflag = 1;
-	} elsif ($ARGV[0] eq "-n") {
-		$nflag = 1;
-	} elsif ($ARGV[0] eq "-a") {
-		$autoupdate = 1;
+while ((my ($flag, @args) = getargs('u', 0, 'a', 0, 'p', 1))) {
+	usage()	   if ($flag eq 'h');
+	$aflag = 1 if ($flag eq 'a');
+	$uflag = 1 if ($flag eq 'u');
+	if ($flag eq 'p') {
+		$pflag = 1;
+		$delay = $args[0];
 	}
-	shift;
 }
 
-if ($autoupdate == 0) {
+if ($aflag == 0) {
 	if (($uflag == 1 && $nflag == 1) || ($uflag == 0 && $nflag == 0)) {
 		usage();
 	}
-} elsif ($autoupdate + $nflag + $uflag > 1) {
+} elsif ($aflag + $nflag + $uflag > 1) {
 		usage();
+} elsif ($pflag && !$aflag) {
+	usage();
 }
 
 if ($nflag == 1) {
@@ -557,7 +622,7 @@ if ($nflag == 1) {
 	push @ob_menu, '</item>' . "\n";
 	push @ob_menu, '</menu>' . "\n";
 	push @ob_menu, '</openbox_menu>' . "\n";
-} elsif (!$autoupdate) {
+} elsif (!$aflag) {
 	read_obmenu();
 }
 
@@ -569,20 +634,27 @@ for (my $i = 0; $i < @apps_paths;) {
 	}
 }
 
-if ($autoupdate) {
+if ($aflag) {
 	open($lock, '>>', $lockfile)
 		or Xerr(1, "Failed to open lockfile");
 	unless (flock($lock, LOCK_EX|LOCK_NB)) {
 		print STDERR "Another instance of '$0 -a' is already running\n";
 		exit(1);
 	}
-	$kq = IO::KQueue->new();
-	foreach (@apps_paths) {
-		if (open(my $fh, $_)) {
-			push @fhs, $fh;
-			my $fd = fileno($fh);
-			$kq->EV_SET($fd, EVFILT_VNODE, EV_ADD|EV_ONESHOT,
-				NOTE_WRITE, 0, 0);
+	if ($pflag) {
+		for (my $i = 0; $i < @apps_paths; $i++) {
+			my @r = stat($apps_paths[$i]);
+			$mtimes[$i] = $r[9];
+		}
+	} else {
+		$kq = IO::KQueue->new();
+		foreach (@apps_paths) {
+			if (open(my $fh, $_)) {
+				push @fhs, $fh;
+				my $fd = fileno($fh);
+				$kq->EV_SET($fd, EVFILT_VNODE, EV_ADD|EV_ONESHOT,
+					NOTE_WRITE, 0, 0);
+			}
 		}
 	}
 }
@@ -591,13 +663,28 @@ read_blacklist();
 get_icon_search_paths();
 
 while (1) {
-	if ($autoupdate) {
-		my @events = $kq->kevent();
-		next if (!@events);
-		foreach my $kevent (@events) {
-			my $fd = $kevent->[KQ_IDENT];
-			sleep(1);
-			$kq->EV_SET($fd, EVFILT_VNODE, EV_ADD|EV_ONESHOT, NOTE_WRITE, 0, 0);
+	if ($aflag) {
+		if ($pflag) {
+			sleep($delay);
+			for (my $i = 0; $i < @apps_paths; $i++) {
+				my @r = stat($apps_paths[$i]);
+				if ($mtimes[$i] != $r[9]) {
+						print STDERR "UPDATE\n"; STDERR->flush();
+						$mtimes[$i] = $r[9];
+						$update = 1;
+				}
+				sleep(1);
+			}
+			next if (!$update);
+		} else {
+			my @events = $kq->kevent();
+			next if (!@events);
+			foreach my $kevent (@events) {
+				my $fd = $kevent->[KQ_IDENT];
+				sleep(1);
+				$kq->EV_SET($fd, EVFILT_VNODE, EV_ADD|EV_ONESHOT,
+								 NOTE_WRITE, 0, 0);
+			}
 		}
 		read_obmenu();
 	}
@@ -648,9 +735,10 @@ while (1) {
 		}
 		@capps = ();
 	}
-	last if (!$autoupdate);
+	last if (!$aflag);
 	add_me();
 	write_obmenu();
+	$update = 0;
 }
 
 # Add an entry for this script to the Openbox root menu.
