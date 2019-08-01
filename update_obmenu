@@ -68,7 +68,87 @@ my %ctgrs_de = (
 	System	   => "System",      Utility     => "Zubehör",
 	Application=> "Anwendungen"
 );
-my %ctgrs = (de => \%ctgrs_de);
+
+my %ctgrs_fr = (
+	AudioVideo => "Audio/Video", Audio       => "Audio",
+	Video      => "Video",       Development => "Développement",
+	Education  => "Éducation",   Game        => "Jeu",
+	Graphics   => "Graphique",   Network     => "Réseau",
+	Office     => "Bureau",      Settings    => "Réglages",
+	System     => "Système",     Utility     => "Utilitaire",
+	Application=> "Application"
+);
+
+my %ctgrs_es = (
+	AudioVideo => "Audio/Video", Audio       => "Audio",
+	Video      => "Video",       Development => "Desarrollo",
+	Education  => "Educación",   Game        => "Juego",
+	Graphics   => "Gráficos",    Network     => "Red",
+	Office     => "Oficina",     Settings    => "Ajustes",
+	System     => "Sistemas",    Utility     => "Utilidad",
+	Application=> "Solicitud"
+);
+
+my %ctgrs_gr = (
+	AudioVideo => "Ήχος/βίντεο", Audio       => "Ήχος",
+	Video      => "βίντεο",      Development => "Ανάπτυξη",
+	Education  => "Εκπαίδευση",  Game        => "Παιχνίδι",
+	Graphics   => "Γραφικά",     Network     => "Δίκτυο",
+	Office     => "Γραφείο",     Settings    => "Ρυθμίσεις",
+	System     => "Σύστημα",     Utility     => "Χρησιμότητα",
+	Application=> "Εφαρμογή"
+);
+
+my %ctgrs_pt = (
+	AudioVideo => "Áudio/Vídeo", Audio       => "Áudio",
+	Video      => "Vídeo",       Development => "Desenvolvimento",
+	Education  => "Educação",    Game        => "Jogos",
+	Graphics   => "Gráficos",    Network     => "Rede",
+	Office     => "Escritório",  Settings    => "Definições",
+	System     => "Sistema",     Utility     => "Utility",
+	Application=> "Aplicação"
+);
+
+my %ctgrs_ru = (
+	AudioVideo => "Аудио/видео", Audio       => "аудио",
+	Video      => "видео",       Development => "развитие",
+	Education  => "образование", Game        => "Игра",
+	Graphics   => "Графика",     Network     => "сеть",
+	Office     => "офис",        Settings    => "настройки",
+	System     => "система",     Utility     => "Полезность",
+	Application=> "заявка"
+);
+
+my %ctgrs_zh = (
+	AudioVideo => "音頻視頻",      Audio       => "音頻",
+	Video      => "視頻",         Development => "發展",
+	Education  => "教育",         Game        => "遊戲",
+	Graphics   => "圖像",         Network     => "網絡",
+	Office     => "辦公室",       Settings    => "設置",
+	System     => "系統",         Utility     => "效用",
+	Application=> "應用"
+);
+
+my %ctgrs_jp = (
+	AudioVideo => "オーディオ/ビデオ", Audio       => "オーディオ",
+	Video      => "ビデオ",          Development => "開発",
+	Education  => "教育",            Game        => "ゲーム",
+	Graphics   => "グラフィックス",    Network     => "ネットワーク",
+	Office     => "事務所",          Settings    => "設定",
+	System     => "システム",        Utility      => "効用",
+	Application=> "応用"
+);
+
+my %ctgrs = (
+	de => \%ctgrs_de,
+	es => \%ctgrs_es,
+	fr => \%ctgrs_fr,
+	gr => \%ctgrs_gr,
+	jp => \%ctgrs_jp,
+	pt => \%ctgrs_pt,
+	ru => \%ctgrs_ru,
+	zh => \%ctgrs_zh
+);
 
 my @xterms= (
 	"sakura", "urxvt", "rxvt", "mrxvt", "xterm", "Terminal",
