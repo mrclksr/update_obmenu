@@ -53,25 +53,27 @@ my %category_icons = (
 );
 
 my @categories = (
-	"AudioVideo",	"Audio",	"Video",	"Development",
-	"Education",	"Game",		"Graphics",	"Network",
-	"Office",		"Settings",	"System",	"Utility"
+	"AudioVideo", "Audio",    "Video",    "Development",
+	"Education",  "Game",     "Graphics", "Network",
+	"Office",     "Settings", "System",   "Utility"
 );
 
 # Add your language here.
 my %ctgrs_de = (
-	AudioVideo => "Audio/Video", Audio		 => "Audio",
-	Video	   => "Video",	     Development => "Entwicklung",
-	Education  => "Bildung",     Game		 => "Spiele",
-	Graphics   => "Grafik",	     Network	 => "Netzwerk/Internet",
-	Office	   => "Büro",	     Settings	 => "Einstellungen",
-	System	   => "System",	     Utility	 => "Zubehör",
+	AudioVideo => "Audio/Video", Audio       => "Audio",
+	Video	   => "Video",       Development => "Entwicklung",
+	Education  => "Bildung",     Game        => "Spiele",
+	Graphics   => "Grafik",      Network     => "Netzwerk/Internet",
+	Office	   => "Büro",        Settings    => "Einstellungen",
+	System	   => "System",      Utility     => "Zubehör",
 	Application=> "Anwendungen"
 );
 my %ctgrs = (de => \%ctgrs_de);
 
-my @xterms= ("sakura", "urxvt", "rxvt", "mrxvt", "xterm", "Terminal",
-			 "gnome-terminal");
+my @xterms= (
+	"sakura", "urxvt", "rxvt", "mrxvt", "xterm", "Terminal",
+	"gnome-terminal"
+);
 
 # Where to look for desktop files.
 my @apps_paths = (
@@ -105,13 +107,8 @@ my $lockfile	= "$ENV{'HOME'}/.update_obmenu.lock";
 my $menu_path   = "$ENV{'HOME'}/.config/openbox/menu.xml";
 my @menu_prefix = ("/etc", "/usr/etc", "/usr/local/etc");
 my $dflt_menu   = "xdg/openbox/menu.xml";
-my $icon_theme;
-my $fallback_icon_theme;
-my $xterm;
-my @ob_menu;
-my @blacklist;
-my @apps;
-my @icon_search_paths;
+my ($icon_theme, $fallback_icon_theme, $xterm);
+my (@ob_menu, @blacklist, @apps, @icon_search_paths);
 my %cats_hash;
 ##############################################################################
 sub Xerr {
@@ -342,7 +339,7 @@ sub add_submenu {
 	my ($id, $label)  = @_;
 	my $idx   = 0;
 	my $label = translate($id);
-	my $icon = find_icon($category_icons{$id});
+	my $icon  = find_icon($category_icons{$id});
 	local $_;
 
 	foreach (@ob_menu) {
@@ -354,21 +351,19 @@ sub add_submenu {
 			"Your menu.xml seems to be corrupted.");
 	}
 	splice @ob_menu, $idx + 1, 0,
-	    "<menu id=\"$id\" label=\"$label\" comment=\"--- auto ---\">\n";
+		   "<menu id=\"$id\" label=\"$label\" comment=\"--- auto ---\">\n";
 	splice @ob_menu, $idx + 2, 0, "</menu>\n";
 
 	if (($idx = find_menu("root-menu")) == -1)
 		{ Xerr(1, "Fatal: Couldn't find the root menu") }
 	splice @ob_menu, $idx + 1, 0, "\t<menu id=\"$id\" icon=\"$icon\" " .
-	    "comment=\"--- auto ---\"/>\n";
+		   "comment=\"--- auto ---\"/>\n";
 	return (0);
 }
 
 sub add_application {
 	my (%app) = @_;
-	my $i     = 0;
-	my $xterm;
-	my $icon;
+	my ($i, $xterm, $icon);
 	local $_;
 
 	return (-1) if (($i = find_menu($app{'Category'})) == -1);
@@ -387,17 +382,17 @@ sub add_application {
 			$icon = "$icon".".png"
 				if ($icon !~ /.*\.[a-zA-Z]+$/);
 			splice @ob_menu, $i + 1, 0,
-			    "\t<item icon=\"$icon\"" .
-			    " label=\"$app{'Name'}\" ".
-			     "comment=\"--- auto ---\">\n";
+				   "\t<item icon=\"$icon\"" .
+				   " label=\"$app{'Name'}\" ".
+				   "comment=\"--- auto ---\">\n";
 		} else {
 			splice @ob_menu, $i + 1, 0,
-			    "\t<item label=\"$app{'Name'}\" ".
-			    "comment=\"--- auto ---\">\n";
+				   "\t<item label=\"$app{'Name'}\" ".
+				   "comment=\"--- auto ---\">\n";
 		}
 	} else {
 		splice @ob_menu, $i + 1, 0, "\t<item label=\"$app{'Name'}\" ".
-					    "comment=\"--- auto ---\">\n";
+			   "comment=\"--- auto ---\">\n";
 	}
 	splice @ob_menu, $i + 2, 0, "\t\t<action name=\"Execute\">\n";
 	splice @ob_menu, $i + 3, 0, "\t\t\t<command>$app{'Exec'}</command>\n";
@@ -509,8 +504,8 @@ sub write_obmenu {
 # If $ARGV[0] containes a flag not in the given array, or @ARGV doesn't
 # have the required number of arguments, exit with an error.
 # If $ARGV[0] contains a valid flag and @ARGV has the expected number of
-# arguments, return the flag character. If $ARGV[0] doesn't start with
-# a '-', return an empty string.
+# arguments, return the flag character and an array with its arguments.
+# If $ARGV[0] doesn't start with a '-', return an empty string.
 #
 sub getargs {
 	my ($nargs, $i);
@@ -582,7 +577,7 @@ sub usage {
 			 "'delay' seconds.\n" .
 			 "-u   : Update your Openbox menu.\n" .
 		     "-n   : Create a new Openbox menu. Your old menu.xml " .
-	    "will be overwritten!\n";
+			 "will be overwritten!\n";
 	exit(1);
 }
 
@@ -618,7 +613,7 @@ if ($aflag == 0) {
 		usage();
 	}
 } elsif ($aflag + $nflag + $uflag > 1) {
-		usage();
+	usage();
 } elsif ($pflag && !$aflag) {
 	usage();
 }
@@ -677,7 +672,7 @@ if ($aflag) {
 				push @fhs, $fh;
 				my $fd = fileno($fh);
 				$kq->EV_SET($fd, EVFILT_VNODE, EV_ADD|EV_ONESHOT,
-					NOTE_WRITE, 0, 0);
+							NOTE_WRITE, 0, 0);
 			}
 		}
 	}
@@ -693,9 +688,8 @@ while (1) {
 			for (my $i = 0; $i < @apps_paths; $i++) {
 				my @r = stat($apps_paths[$i]);
 				if ($mtimes[$i] != $r[9]) {
-						print STDERR "UPDATE\n"; STDERR->flush();
-						$mtimes[$i] = $r[9];
-						$update = 1;
+					$mtimes[$i] = $r[9];
+					$update = 1;
 				}
 				sleep(1);
 			}
