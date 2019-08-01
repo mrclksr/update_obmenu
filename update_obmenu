@@ -107,15 +107,18 @@ my $lockfile	= "$ENV{'HOME'}/.update_obmenu.lock";
 my $menu_path   = "$ENV{'HOME'}/.config/openbox/menu.xml";
 my @menu_prefix = ("/etc", "/usr/etc", "/usr/local/etc");
 my $dflt_menu   = "xdg/openbox/menu.xml";
-my ($icon_theme, $fallback_icon_theme, $xterm);
+my ($progname, $icon_theme, $fallback_icon_theme, $xterm);
 my (@ob_menu, @blacklist, @apps, @icon_search_paths);
 my %cats_hash;
+
 ##############################################################################
 sub Xerr {
 	my ($ret, $msg) = @_;
-
+	$msg = "$progname: $msg";
 	print STDERR "$msg\n";
-	system("xmessage \"$msg\"") if (system("gmessage \"$msg\"") == -1);
+	unless (system("notify-send -u critical \"$msg\"") == 0) {
+		system("xmessage \"$msg\"") if (system("gmessage \"$msg\"") == -1);
+	}
 	exit($ret);
 }
 
@@ -568,9 +571,6 @@ sub getargs {
 }
 
 sub usage {
-	my $progname = $0;
-
-	$progname = $1 if ($0 =~ /\.{0,2}.*\/([a-zA-Z0-9.,-_]+$)/);
 	print STDERR "Usage: $progname -u|-n|-a [-p delay]\n" .
 			 "-a   : Monitor application directories and autoupdate menu.\n" .
 			 "-p   : Instead of kqueue use stat to poll for changes every " .
@@ -587,6 +587,12 @@ my ($path, $kq, $lock);
 my (@fhs, @mtimes);
 
 ($lang) = split(/\./, $ENV{'LANG'});
+
+if ($0 =~ /\.{0,2}.*\/([a-zA-Z0-9.,-_]+$)/) {
+	$progname = $1;
+} else {
+	$progname = $0;
+}
 
 # Look for the default openbox menu
 foreach (@menu_prefix) {
@@ -652,7 +658,7 @@ if ($aflag) {
 	open($lock, '>>', $lockfile)
 		or Xerr(1, "Failed to open lockfile");
 	unless (flock($lock, LOCK_EX|LOCK_NB)) {
-		print STDERR "Another instance of '$0 -a' is already running\n";
+		print STDERR "Another instance of '$progname -a' is already running\n";
 		exit(1);
 	}
 	seek $lock, 0, 0;
