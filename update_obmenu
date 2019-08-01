@@ -603,7 +603,7 @@ foreach (@menu_prefix) {
 	}
 }
 
-while ((my ($flag, @args) = getargs('u', 0, 'a', 0, 'p', 1))) {
+while ((my ($flag, @args) = getargs('h', 0, 'u', 0, 'a', 0, 'p', 1))) {
 	usage()	   if ($flag eq 'h');
 	$aflag = 1 if ($flag eq 'a');
 	$uflag = 1 if ($flag eq 'u');
