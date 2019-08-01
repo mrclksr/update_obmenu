@@ -162,9 +162,9 @@ my @apps_paths = (
 
 # Paths to look for icon dirs.
 my @icon_prefix = (
-	"$ENV{HOME}/.icons",
 	"/usr/local/share/icons",
 	"/usr/share/icons",
+	"$ENV{HOME}/.icons",
 	"$ENV{'HOME'}/.local/share/icons"
 );
 
@@ -186,12 +186,13 @@ my @toolkit_config_paths = (
 	"$ENV{'HOME'}/.config/qt5ct/qt5ct.conf"
 );
 
-my $lang        = "en";
-my $lockfile	= "$ENV{'HOME'}/.update_obmenu.lock";
-my $menu_path   = "$ENV{'HOME'}/.config/openbox/menu.xml";
-my @menu_prefix = ("/etc", "/usr/etc", "/usr/local/etc");
-my $dflt_menu   = "xdg/openbox/menu.xml";
-my ($progname, $icon_theme, $fallback_icon_theme, $xterm);
+my $lang                = "en";
+my $lockfile            = "$ENV{'HOME'}/.update_obmenu.lock";
+my $menu_path           = "$ENV{'HOME'}/.config/openbox/menu.xml";
+my @menu_prefix         = ("/etc", "/usr/etc", "/usr/local/etc");
+my $dflt_menu           = "xdg/openbox/menu.xml";
+my $fallback_icon_theme = "hicolor";
+my ($progname, $icon_theme, $xterm);
 my (@ob_menu, @blacklist, @apps, @icon_search_paths);
 my %cats_hash;
 
@@ -666,13 +667,14 @@ sub getargs {
 }
 
 sub usage {
-	print STDERR "Usage: $progname -u|-n|-a [-p delay]\n" .
+	print STDERR "Usage: $progname [-i theme] -u|-n|-a [-p delay]\n" .
 			 "-a   : Monitor application directories and autoupdate menu.\n" .
 			 "-p   : Instead of kqueue use stat to poll for changes every " .
 			 "'delay' seconds.\n" .
 			 "-u   : Update your Openbox menu.\n" .
 		     "-n   : Create a new Openbox menu. Your old menu.xml " .
-			 "will be overwritten!\n";
+			 "will be overwritten!\n" .
+			 "-i   : Use the given icon theme.\n";
 	exit(1);
 }
 
@@ -699,7 +701,7 @@ foreach (@menu_prefix) {
 	}
 }
 
-while ((my ($flag, @args) = getargs('n', 0, 'h', 0, 'u', 0, 'a', 0, 'p', 1))) {
+while ((my ($flag, @args) = getargs(qw(n 0 h 0 u 0 a 0 p 1 i 1)))) {
 	usage()	   if ($flag eq 'h');
 	$aflag = 1 if ($flag eq 'a');
 	$uflag = 1 if ($flag eq 'u');
@@ -707,6 +709,8 @@ while ((my ($flag, @args) = getargs('n', 0, 'h', 0, 'u', 0, 'a', 0, 'p', 1))) {
 	if ($flag eq 'p') {
 		$pflag = 1;
 		$delay = $args[0];
+	} elsif ($flag eq 'i') {
+		$icon_theme = $args[0];
 	}
 }
 
