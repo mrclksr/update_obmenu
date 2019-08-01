@@ -312,7 +312,7 @@ sub find_icon {
 	my @exts = ('.svg', '.png', '.xpm');
 	local $_;
 
-	if ($icon !~ /.*\.[a-zA-Z]+$/) {
+	if ($icon !~ /.*\.(svg|png|xpm)$/) {
 		for ($i = 0; $i < @exts; $i++) {
 			$p = $icon . $exts[$i];
 			foreach $dir (@icon_search_paths) {
