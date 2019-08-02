@@ -24,9 +24,11 @@ the directories, no further events are returned by `kevent()`.
 
 # USAGE
 
-    Usage: update_obmenu [-i theme] -u|-n|-a [-p delay]
+    Usage: update_obmenu [-i theme] [-I <fallback theme>] -u|-n|-a [-p delay]
     -a   : Monitor application directories and autoupdate menu.
     -p   : Instead of kqueue use stat to poll for changes every 'delay' seconds.
     -u   : Update your Openbox menu.
     -n   : Create a new Openbox menu. Your old menu.xml will be overwritten!
     -i   : Use the given icon theme.
+    -I   : Use the given fallback icon theme.
+
