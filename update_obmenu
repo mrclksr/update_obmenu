@@ -234,11 +234,11 @@ sub lookup_icon_theme {
 	foreach my $path (@toolkit_config_paths) {
 		open($fh, '<', $path) or next;
 		foreach (<$fh>) {
-			if (/^gtk-icon-theme-name\s*=\s*\"(.+)\"/) {
+			if (/^gtk-icon-theme-name\s*=\s*\"?(.+?)\"?$/) {
 				$icon_theme = $1 if (!$icon_theme);
-			} elsif (/^gtk-fallback-icon-theme\s*=\s*\"(.+)\"/) {
+			} elsif (/^gtk-fallback-icon-theme\s*=\s*\"?(.+?)\"?$/) {
 				$fallback_icon_theme = $1 if (!$fallback_icon_theme);
-			} elsif (/^icon_theme\s*=\s*(.+)/) {
+			} elsif (/^icon_theme\s*=\s*\"?(.+?)\"?$/) {
 				$icon_theme = $1 if (!$icon_theme);
 			}
 		}
