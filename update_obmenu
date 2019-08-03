@@ -609,19 +609,19 @@ sub getargs {
 		}
 		if ($i == @_ - 1) {
 			print STDERR "Invalid option '-$1'\n";
-			exit 1;
+			return -1;
 		}
 		for (my $j = 0; $j + 1 < $nargs && $j < $_[$i + 1]; $j++) {
 			if ($ARGV[$j + 1] =~ /^-/) {
 				print STDERR "Option -$_[$i] requires $_[$i + 1] argument(s)\n";
-				exit 1
+				return -1;
 			}
 		}
 		my @args = ($2);
 		push @args, splice(@ARGV, 1, $_[$i + 1] - 1);
 		if (@args < $_[$i + 1]) {
 			print STDERR "Option -$_[$i] requires $_[$i + 1] argument(s)\n";
-			exit 1
+			return -1;
 		}
 		shift @ARGV;
 		return (($1, @args));
@@ -635,12 +635,12 @@ sub getargs {
 		next if ($_[$i] ne $1);
 		if ($nargs < $_[$i + 1]) {
 			print STDERR "Option -$_[$i] requires $_[$i + 1] arguments\n";
-			exit 1;
+			return -1;
 		}
 		for (my $j = 0; $j + 1 < $nargs && $j < $_[$i + 1]; $j++) {
 			if ($ARGV[$j + 1] =~ /^-/) {
 				print STDERR "Option -$_[$i] requires $_[$i + 1] arguments\n";
-				exit 1
+				return -1;
 			}
 		}
 		my @args = splice(@ARGV, 1, $_[$i + 1]);
@@ -648,19 +648,37 @@ sub getargs {
 		return (($1, @args));
 	}
 	print STDERR "Invalid option '$ARGV[0]'\n";
-	exit 1;
+	return -1;
+}
+
+sub help {
+	my @htext = (<<"HTEXT_END" =~ m/^\t*(.+)/gm);
+	Usage: $progname [options] -n
+	       $progname [options] -u
+	       $progname [options] -a [-p delay]
+	Options:
+	  Mandatory options:
+	  -a [-p delay] Monitor application directories and autoupdate menu. If
+	                -p delay is given, poll for directory modifications every
+	                'delay' seconds using stat(2). Otherwise kqueue(2) is used.
+	  -u            Update your Openbox menu.
+	  -n            Create a new Openbox menu. Your old menu.xml will be
+	                overwritten!
+	  General options:
+	  -i theme      Use the given icon theme.
+	  -I fallback   Use the given fallback icon theme.
+	  -t xterm      Define terminal emulator for programs running in a terminal.
+HTEXT_END
+	foreach (@htext)
+		{ print "$_\n" }
+	exit(1);
 }
 
 sub usage {
 	my @utext = (<<"UTEXT_END" =~ m/^\t*(.+)/gm);
-	Usage: $progname [-i theme] [-I <fallback theme>] -u|-n|-a [-p delay]
-	-a   : Monitor application directories and autoupdate menu.
-	-p   : Instead of kqueue use stat to poll for changes every 'delay' seconds.
-	-u   : Update your Openbox menu.
-	-n   : Create a new Openbox menu. Your old menu.xml
-	       will be overwritten!
-	-i   : Use the given icon theme.
-	-I   : Use the given fallback icon theme.
+	Usage: $progname [options] -n
+	       $progname [options] -u
+	       $progname [options] -a [-p delay]
 UTEXT_END
 	foreach (@utext)
 		{ print "$_\n" }
@@ -689,8 +707,8 @@ foreach (@menu_prefix) {
 	}
 }
 
-while ((my ($flag, @args) = getargs(qw(n 0 h 0 u 0 a 0 p 1 i 1 I 1)))) {
-	usage()	   if ($flag eq 'h');
+while ((my ($flag, @args) = getargs(qw(n 0 h 0 u 0 a 0 p 1 i 1 I 1 t 1)))) {
+	help()	   if ($flag eq 'h');
 	$aflag = 1 if ($flag eq 'a');
 	$uflag = 1 if ($flag eq 'u');
 	$nflag = 1 if ($flag eq 'n');
@@ -701,6 +719,10 @@ while ((my ($flag, @args) = getargs(qw(n 0 h 0 u 0 a 0 p 1 i 1 I 1)))) {
 		$icon_theme = $args[0];
 	} elsif ($flag eq 'I') {
 		$fallback_icon_theme = $args[0];
+	} elsif ($flag eq 't') {
+		@xterms = ($args[0], @xterms);
+	} elsif ($flag == -1) {
+		usage();
 	}
 }
 
