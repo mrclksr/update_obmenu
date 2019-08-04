@@ -1,6 +1,6 @@
 # ABOUT
 
-update_obmenu is a Perl script that creates and updates your Openbox menu.
+update\_obmenu is a Perl script that creates and updates your Openbox menu.
 It scans certain directories for desktop files, and adds new application
 entries and submenus, including icons, to your Openbox menu.
 
@@ -21,6 +21,11 @@ run `update_obmenu -u`.
 For monitoring application directories on FreeBSD's unionfs use `-p`, as kqueue
 isn't working reliable there. That is, after a few modifications on one of
 the directories, no further events are returned by `kevent()`.
+
+# EXCLUDE DESKTOP FILES
+
+Add the paths of desktop files to the file `~/.config/update_obmenu.ignore`
+to be ignored.
 
 # USAGE
 
