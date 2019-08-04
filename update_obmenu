@@ -33,119 +33,175 @@ use Fcntl qw(:flock);
 use IO::KQueue;
 
 my %category_icons = (
-	AudioVideo  => "applications-multimedia",
-	Audio	    => "applications-multimedia",
-	Video	    => "applications-multimedia",
-	Development => "applications-development",
-	Education   => "applications-science",
-	Game	    => "applications-games",
-	Graphics    => "applications-graphics",
-	Network	    => "applications-internet",
-	Office	    => "applications-office",
-	Settings    => "preferences-system",
-	System	    => "applications-system",
-	Utility	    => "applications-utilities",
-	Application => "applications-other"
+	AudioVideo    => 'applications-multimedia',
+	Audio	      => 'applications-multimedia',
+	Video	      => 'applications-multimedia',
+	Development   => 'applications-development',
+	Education     => 'applications-science',
+	Game	      => 'applications-games',
+	Graphics      => 'applications-graphics',
+	Network	      => 'applications-internet',
+	Office	      => 'applications-office',
+	Settings      => 'preferences-system',
+	System	      => 'applications-system',
+	Utility	      => 'applications-utilities',
+	Application   => 'applications-other'
 );
 
-my @categories = (
-	"AudioVideo", "Audio",    "Video",    "Development",
-	"Education",  "Game",     "Graphics", "Network",
-	"Office",     "Settings", "System",   "Utility"
+my @categories = qw(
+	AudioVideo    Audio    Video     Development
+	Education     Game     Graphics  Network
+	Office        Settings System    Utility
 );
 
-my %ctgrs_de = (
-	AudioVideo => "Audio/Video", Audio       => "Audio",
-	Video	   => "Video",       Development => "Entwicklung",
-	Education  => "Bildung",     Game        => "Spiele",
-	Graphics   => "Grafik",      Network     => "Netzwerk/Internet",
-	Office	   => "Büro",        Settings    => "Einstellungen",
-	System	   => "System",      Utility     => "Zubehör",
-	Application=> "Anwendungen"
+my %trtbl_de = (
+	'AudioVideo'  => 'Audio/Video',
+	'Audio'       => 'Audio',
+	'Video'	      => 'Video',
+	'Development' => 'Entwicklung',
+	'Education'   => 'Bildung',
+	'Game'        => 'Spiele',
+	'Graphics'    => 'Grafik',
+	'Network'     => 'Netzwerk/Internet',
+	'Office'	  => 'Büro',
+	'Settings'    => 'Einstellungen',
+	'System'	  => 'System',
+	'Utility'     => 'Zubehör',
+	'Application' => 'Anwendungen',
+	'Update menu' => 'Menü aktualisieren'
 );
 
-my %ctgrs_fr = (
-	AudioVideo => "Audio/Video", Audio       => "Audio",
-	Video      => "Video",       Development => "Développement",
-	Education  => "Éducation",   Game        => "Jeu",
-	Graphics   => "Graphique",   Network     => "Réseau",
-	Office     => "Bureau",      Settings    => "Réglages",
-	System     => "Système",     Utility     => "Utilitaire",
-	Application=> "Application"
+my %trtbl_fr = (
+	'AudioVideo'  => 'Audio/Video',
+	'Audio'       => 'Audio',
+	'Video'       => 'Video',
+	'Development' => 'Développement',
+	'Education'   => 'Éducation',
+	'Game'        => 'Jeu',
+	'Graphics'    => 'Graphique',
+	'Network'     => 'Réseau',
+	'Office'      => 'Bureau',
+	'Settings'    => 'Réglages',
+	'System'      => 'Système',
+	'Utility'     => 'Utilitaire',
+	'Application' => 'Application',
+	'Update menu' => 'Menu de mise à jour'
 );
 
-my %ctgrs_es = (
-	AudioVideo => "Audio/Video", Audio       => "Audio",
-	Video      => "Video",       Development => "Desarrollo",
-	Education  => "Educación",   Game        => "Juego",
-	Graphics   => "Gráficos",    Network     => "Red",
-	Office     => "Oficina",     Settings    => "Ajustes",
-	System     => "Sistemas",    Utility     => "Utilidad",
-	Application=> "Solicitud"
+my %trtbl_es = (
+	'AudioVideo'  => 'Audio/Video',
+	'Audio'       => 'Audio',
+	'Video'       => 'Video',
+	'Development' => 'Desarrollo',
+	'Education'   => 'Educación',
+	'Game'        => 'Juego',
+	'Graphics'    => 'Gráficos',
+	'Network'     => 'Red',
+	'Office'      => 'Oficina',
+	'Settings'    => 'Ajustes',
+	'System'      => 'Sistemas',
+	'Utility'     => 'Utilidad',
+	'Application' => 'Solicitud',
+	'Update menu' => 'Actualizar menú'
 );
 
-my %ctgrs_gr = (
-	AudioVideo => "Ήχος/βίντεο", Audio       => "Ήχος",
-	Video      => "βίντεο",      Development => "Ανάπτυξη",
-	Education  => "Εκπαίδευση",  Game        => "Παιχνίδι",
-	Graphics   => "Γραφικά",     Network     => "Δίκτυο",
-	Office     => "Γραφείο",     Settings    => "Ρυθμίσεις",
-	System     => "Σύστημα",     Utility     => "Χρησιμότητα",
-	Application=> "Εφαρμογή"
+my %trtbl_gr = (
+	'AudioVideo'  => 'Ήχος/βίντεο',
+	'Audio'       => 'Ήχος',
+	'Video'       => 'βίντεο',
+	'Development' => 'Ανάπτυξη',
+	'Education'   => 'Εκπαίδευση',
+	'Game'        => 'Παιχνίδι',
+	'Graphics'    => 'Γραφικά',
+	'Network'     => 'Δίκτυο',
+	'Office'      => 'Γραφείο',
+	'Settings'    => 'Ρυθμίσεις',
+	'System'      => 'Σύστημα',
+	'Utility'     => 'Χρησιμότητα',
+	'Application' => 'Εφαρμογή',
+	'Update menu' => 'Ενημέρωση μενού'
 );
 
-my %ctgrs_pt = (
-	AudioVideo => "Áudio/Vídeo", Audio       => "Áudio",
-	Video      => "Vídeo",       Development => "Desenvolvimento",
-	Education  => "Educação",    Game        => "Jogos",
-	Graphics   => "Gráficos",    Network     => "Rede",
-	Office     => "Escritório",  Settings    => "Definições",
-	System     => "Sistema",     Utility     => "Utility",
-	Application=> "Aplicação"
+my %trtbl_pt = (
+	'AudioVideo'  => 'Áudio/Vídeo',
+	'Audio'       => 'Áudio',
+	'Video'       => 'Vídeo',
+	'Development' => 'Desenvolvimento',
+	'Education'   => 'Educação',
+	'Game'        => 'Jogos',
+	'Graphics'    => 'Gráficos',
+	'Network'     => 'Rede',
+	'Office'      => 'Escritório',
+	'Settings'    => 'Definições',
+	'System'      => 'Sistema',
+	'Utility'     => 'Utility',
+	'Application' => 'Aplicação',
+	'Update menu' => 'Atualizar menu'
 );
 
-my %ctgrs_ru = (
-	AudioVideo => "Аудио/видео", Audio       => "аудио",
-	Video      => "видео",       Development => "развитие",
-	Education  => "образование", Game        => "Игра",
-	Graphics   => "Графика",     Network     => "сеть",
-	Office     => "офис",        Settings    => "настройки",
-	System     => "система",     Utility     => "Полезность",
-	Application=> "заявка"
+my %trtbl_ru = (
+	'AudioVideo'  => 'Аудио/видео',
+	'Audio'       => 'аудио',
+	'Video'       => 'видео',
+	'Development' => 'развитие',
+	'Education'   => 'образование',
+	'Game'        => 'Игра',
+	'Graphics'    => 'Графика',
+	'Network'     => 'сеть',
+	'Office'      => 'офис',
+	'Settings'    => 'настройки',
+	'System'      => 'система',
+	'Utility'     => 'Полезность',
+	'Application' => 'заявка',
+	'Update menu' => 'Обновить меню'
 );
 
-my %ctgrs_zh = (
-	AudioVideo => "音頻視頻",      Audio       => "音頻",
-	Video      => "視頻",         Development => "發展",
-	Education  => "教育",         Game        => "遊戲",
-	Graphics   => "圖像",         Network     => "網絡",
-	Office     => "辦公室",       Settings    => "設置",
-	System     => "系統",         Utility     => "效用",
-	Application=> "應用"
+my %trtbl_zh = (
+	'AudioVideo'  => '音頻視頻',
+	'Audio'       => '音頻',
+	'Video'       => '視頻',
+	'Development' => '發展',
+	'Education'   => '教育',
+	'Game'        => '遊戲',
+	'Graphics'    => '圖像',
+	'Network'     => '網絡',
+	'Office'      => '辦公室',
+	'Settings'    => '設置',
+	'System'      => '系統',
+	'Utility'     => '效用',
+	'Application' => '應用',
+	'Update menu' => '更新菜單'
 );
 
-my %ctgrs_jp = (
-	AudioVideo => "オーディオ/ビデオ", Audio       => "オーディオ",
-	Video      => "ビデオ",          Development => "開発",
-	Education  => "教育",            Game        => "ゲーム",
-	Graphics   => "グラフィックス",    Network     => "ネットワーク",
-	Office     => "事務所",          Settings    => "設定",
-	System     => "システム",        Utility      => "効用",
-	Application=> "応用"
+my %trtbl_jp = (
+	'AudioVideo'  => 'オーディオ/ビデオ',
+	'Audio'       => 'オーディオ',
+	'Video'       => 'ビデオ',
+	'Development' => '開発',
+	'Education'   => '教育',
+	'Game'        => 'ゲーム',
+	'Graphics'    => 'グラフィックス',
+	'Network'     => 'ネットワーク',
+	'Office'      => '事務所',
+	'Settings'    => '設定',
+	'System'      => 'システム',
+	'Utility'     => '効用',
+	'Application' => '応用',
+	'Update menu' => '更新メニュー'
 );
 
-my %ctgrs = (
-	de => \%ctgrs_de,
-	es => \%ctgrs_es,
-	fr => \%ctgrs_fr,
-	gr => \%ctgrs_gr,
-	jp => \%ctgrs_jp,
-	pt => \%ctgrs_pt,
-	ru => \%ctgrs_ru,
-	zh => \%ctgrs_zh
+my %trtbl = (
+	de => \%trtbl_de,
+	es => \%trtbl_es,
+	fr => \%trtbl_fr,
+	gr => \%trtbl_gr,
+	jp => \%trtbl_jp,
+	pt => \%trtbl_pt,
+	ru => \%trtbl_ru,
+	zh => \%trtbl_zh
 );
 
-my @xterms= qw(sakura urxvt rxvt mrxvt xterm Terminal gnome-terminal);
+my @xterms = qw(sakura urxvt rxvt mrxvt xterm Terminal gnome-terminal);
 
 # Where to look for desktop files.
 my @apps_paths = (
@@ -185,7 +241,7 @@ my @toolkit_config_paths = (
 my $lang                = "en";
 my $lockfile            = "$ENV{'HOME'}/.update_obmenu.lock";
 my $menu_path           = "$ENV{'HOME'}/.config/openbox/menu.xml";
-my @menu_prefix         = ("/etc", "/usr/etc", "/usr/local/etc");
+my @menu_prefix         = qw(/etc /usr/etc /usr/local/etc);
 my $dflt_menu           = "xdg/openbox/menu.xml";
 my $default_theme       = "hicolor";
 my ($progname, $icon_theme, $fallback_icon_theme, $xterm);
@@ -209,7 +265,7 @@ sub translate {
 
 	return ($str) if (!$lang || $lang eq 'en');
 	($l) = split(/_/, $lang, 2);
-	return ($str) if (!($p = $ctgrs{$l}));
+	return ($str) if (!($p = $trtbl{$l}));
 	$tstr = ${$p}{$str};
 	utf8::encode($tstr);
 	return ($tstr);
@@ -430,12 +486,12 @@ sub add_submenu {
 			"Your menu.xml seems to be corrupted.");
 	}
 	splice @ob_menu, $idx + 1, 0,
-		   "<menu id=\"$id\" label=\"$label\" comment=\"--- auto ---\">";
+		qq(<menu id="$id" label="$label" comment="--- auto ---">);
 	splice @ob_menu, $idx + 2, 0, "</menu>";
 	if (($idx = find_menu("root-menu")) == -1)
 		{ Xerr(1, "Fatal: Couldn't find the root menu") }
-	splice @ob_menu, $idx + 1, 0, "\t<menu id=\"$id\" icon=\"$icon\" " .
-		   "comment=\"--- auto ---\"/>";
+	splice @ob_menu, $idx + 1, 0,
+		qq(\t<menu id="$id" icon="$icon" comment="--- auto ---"/>);
 	return (0);
 }
 
@@ -460,22 +516,19 @@ sub add_application {
 			$icon = "$icon".".png"
 				if ($icon !~ /.*\.[a-zA-Z]+$/);
 			splice @ob_menu, $i + 1, 0,
-				   "\t<item icon=\"$icon\"" .
-				   " label=\"$app{'Name'}\" " .
-				   "comment=\"--- auto ---\">";
+				qq(\t<item icon="$icon" label="$app{'Name'}" comment="--- auto ---">);
 		} else {
 			splice @ob_menu, $i + 1, 0,
-				   "\t<item label=\"$app{'Name'}\" " .
-				   "comment=\"--- auto ---\">";
+				qq(\t<item label="$app{'Name'}" comment="--- auto ---">);
 		}
 	} else {
-		splice @ob_menu, $i + 1, 0, "\t<item label=\"$app{'Name'}\" " .
-			   "comment=\"--- auto ---\">";
+		splice @ob_menu, $i + 1, 0,
+			qq(\t<item label="$app{'Name'}" comment="--- auto ---">);
 	}
-	splice @ob_menu, $i + 2, 0, "\t\t<action name=\"Execute\">";
-	splice @ob_menu, $i + 3, 0, "\t\t\t<command>$app{'Exec'}</command>";
-	splice @ob_menu, $i + 4, 0, "\t\t</action>";
-	splice @ob_menu, $i + 5, 0, "\t</item>";
+	splice @ob_menu, $i + 2, 0, qq(\t\t<action name="Execute">);
+	splice @ob_menu, $i + 3, 0, qq(\t\t\t<command>$app{'Exec'}</command>);
+	splice @ob_menu, $i + 4, 0, qq(\t\t</action>);
+	splice @ob_menu, $i + 5, 0, qq(\t</item>);
 
 	return (0);
 }
@@ -483,6 +536,8 @@ sub add_application {
 sub add_me {
 	my $idx = 0;
 	my $found_root_menu = 0;
+	my $label = translate(q(Update menu));
+	my $icon  = find_icon(q(view-refresh));
 	local $_;
 
 	foreach (@ob_menu) {
@@ -495,12 +550,11 @@ sub add_me {
 	}
 	return if ($idx == @ob_menu);
 	splice @ob_menu, $idx + 0, 0,
-	    "\t<item label=\"Update Menu\" comment=\"--- auto ---\">";
-	splice @ob_menu, $idx + 1, 0, "\t\t<action name=\"Execute\">";
-	splice @ob_menu, $idx + 2, 0,
-	    "\t\t\t<command>$0 -u<\/command>";
-	splice @ob_menu, $idx + 3, 0, "\t\t<\/action>";
-	splice @ob_menu, $idx + 4, 0, "\t<\/item>";
+	    qq(\t<item label="$label" icon="$icon" comment="--- auto ---">);
+	splice @ob_menu, $idx + 1, 0, qq(\t\t<action name="Execute">);
+	splice @ob_menu, $idx + 2, 0, qq(\t\t\t<command>$0 -u<\/command>);
+	splice @ob_menu, $idx + 3, 0, qq(\t\t<\/action>);
+	splice @ob_menu, $idx + 4, 0, qq(\t<\/item>);
 }
 
 sub read_blacklist {
