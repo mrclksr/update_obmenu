@@ -63,9 +63,9 @@ my %trtbl_de = (
 	'Game'        => 'Spiele',
 	'Graphics'    => 'Grafik',
 	'Network'     => 'Netzwerk/Internet',
-	'Office'	  => 'Büro',
+	'Office'      => 'Büro',
 	'Settings'    => 'Einstellungen',
-	'System'	  => 'System',
+	'System'      => 'System',
 	'Utility'     => 'Zubehör',
 	'Application' => 'Anwendungen',
 	'Update menu' => 'Menü aktualisieren'
@@ -516,7 +516,8 @@ sub add_application {
 			$icon = "$icon".".png"
 				if ($icon !~ /.*\.[a-zA-Z]+$/);
 			splice @ob_menu, $i + 1, 0,
-				qq(\t<item icon="$icon" label="$app{'Name'}" comment="--- auto ---">);
+				qq(\t<item icon="$icon" label="$app{'Name'}" ) .
+				qq(comment="--- auto ---">);
 		} else {
 			splice @ob_menu, $i + 1, 0,
 				qq(\t<item label="$app{'Name'}" comment="--- auto ---">);
