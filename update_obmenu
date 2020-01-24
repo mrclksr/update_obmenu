@@ -208,12 +208,30 @@ my %trtbl_jp = (
 	'Update menu' => '更新メニュー'
 );
 
+my %trtbl_id = (
+	'AudioVideo'  => 'AudioVideo',
+	'Audio'       => 'Audio',
+	'Video'       => 'Video',
+	'Development' => 'Pengembangan',
+	'Education'   => 'Pendidikan',
+	'Game'        => 'Game',
+	'Graphics'    => 'Grafik',
+	'Network'     => 'Jaringan',
+	'Office'      => 'Kantor',
+	'Settings'    => 'Pengaturan',
+	'System'      => 'Sistem',
+	'Utility'     => 'Utilitas',
+	'Application' => 'Aplikasi',
+	'Update menu' => 'Perbarui menu'
+);
+
 my %trtbl = (
 	cs => \%trtbl_cs,
 	de => \%trtbl_de,
 	es => \%trtbl_es,
 	fr => \%trtbl_fr,
 	gr => \%trtbl_gr,
+	id => \%trtbl_id,
 	jp => \%trtbl_jp,
 	pt => \%trtbl_pt,
 	ru => \%trtbl_ru,
