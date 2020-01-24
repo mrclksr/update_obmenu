@@ -30,6 +30,7 @@
 use utf8;
 use strict;
 use Fcntl qw(:flock);
+use File::Temp qw(tempfile);
 use IO::KQueue;
 
 my %category_icons = (
@@ -641,16 +642,20 @@ sub read_obmenu {
 sub write_obmenu {
 	my $fh;
 	local $_;
-
+	my $template = "$menu_path.XXXXXX";
+	my ($tmpfh, $tmpname) = tempfile($template)
+		or Xerr(1, "Could not create temporary file");
 	chmod(0644, $menu_path);
-	open($fh, '>', $menu_path)
+	open($fh, '+<', $menu_path)
 		or Xerr(1, "Could not open \'$menu_path\'");
 	flock($fh, LOCK_EX)
 		or Xerr(1, "Could not lock $menu_path");
 	foreach(@ob_menu) {
 		chomp;
-		print $fh "$_\n"
+		print $tmpfh "$_\n"
 	}
+	rename $tmpname, $menu_path;
+	close($tmpfh);
 	flock($fh, LOCK_UN);
 	close($fh);
 	system("openbox --reconfigure");
