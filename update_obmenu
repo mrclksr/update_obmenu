@@ -479,7 +479,7 @@ sub parse_desktop_file {
 	my %info;
 	my ($fh, $type, $default_comment, $default_name, $terminal, $command);
 	my ($lang1, $lang2, $name, $comment, $category, $path, $icon, $x);
-	my ($no_display, $dt_entry_section);
+	my ($no_display, $dt_entry_section, $only_show_in);
 	local $_;
 
 	$lang1 = $lang;
@@ -509,6 +509,7 @@ sub parse_desktop_file {
 		$path		 = $1 if (/^Path\s*=\s*(.*)/);
 		$icon		 = $1 if (/^Icon\s*=\s*(.*)$/);
 		$no_display	 = $1 if (/^NoDisplay\s*=\s*(.*)$/);
+		$only_show_in= $1 if (/^OnlyShowIn\s*=\s*(.*)$/);
 		if (/^Categories\s*=(\S*)/) {
 			foreach $x (split(/;/, $1)) {
 				foreach (@categories)
@@ -521,17 +522,18 @@ sub parse_desktop_file {
 
 	close($fh);
 	return (0) if ($type ne "Application");
+	return (0) if ($only_show_in);
 
 	$command =~ s/\%[a-z,A-Z]//;
-	$info{'Icon'}	  = $icon; 
-	$info{'Name'}	  = $name ? $name : $default_name;
-	$info{'Comment'}  = $comment ? $comment : $default_comment;
- 	$info{'Type'}	  = $type;
-	$info{'Terminal'} = $terminal;
-	$info{'Exec'}	  = $command;
-	$info{'Category'} = $category ? $category : "Application";
-	$info{'Path'}	  = $path;
-	$info{'NoDisplay'}= lc($no_display);
+	$info{'Icon'}       = $icon;
+	$info{'Name'}       = $name ? $name : $default_name;
+	$info{'Comment'}    = $comment ? $comment : $default_comment;
+	$info{'Type'}       = $type;
+	$info{'Terminal'}   = $terminal;
+	$info{'Exec'}       = $command;
+	$info{'Category'}   = $category ? $category : "Application";
+	$info{'Path'}       = $path;
+	$info{'NoDisplay'}  = lc($no_display);
 	return (%info);
 }
 
